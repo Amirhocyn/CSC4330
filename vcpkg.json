@@ -1,0 +1,30 @@
+{
+  "dependencies": [
+    "glfw3",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "leptonica",
+    {
+      "name": "libmupdf",
+      "features": [
+        "ocr"
+      ]
+    },
+    "opengl",
+    {
+      "name":"poppler",
+      "features": [
+        "cairo"
+      ]
+    },
+    "nanobind",
+    "python3",
+    "tesseract",
+    "duckx"
+  ]
+}

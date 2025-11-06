@@ -1,0 +1,56 @@
+{
+     "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 31,
+    "patch": 0
+  },
+  
+    "configurePresets": [
+      {
+        "name": "msvc",
+        "generator": "Visual Studio 17 2022",
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "cacheVariables": {
+          "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/build/${presetName}",
+          "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/build/${presetName}"
+        }
+      },
+
+      {
+        "name": "ninja",
+        "generator": "Ninja",
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      },
+
+      {
+        "name": "minGW",
+        "generator": "MinGW Makefiles",
+        "binaryDir": "${sourceDir}/build/${presetName}",
+        "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-mingw-static",
+          "VCPKG_HOST_TRIPLET": "x64-mingw-static",
+          "CMAKE_MAKE_PROGRAM": "mingw32-make.exe",
+          "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc.exe",
+          "CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++.exe"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "msvc",
+        "configurePreset": "msvc"
+      },
+      {
+        "name": "ninja",
+        "configurePreset": "ninja"
+      },
+      {
+        "name": "minGW",
+        "configurePreset": "minGW"
+      }
+    ]
+  }
