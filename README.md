@@ -1,4 +1,5 @@
 Developer Intallation Instructions
+
 Make sure you have installed Git and CMake
 
 Git download link: https://git-scm.com/install/
@@ -70,12 +71,17 @@ Linux/MacOS (Bash or Powershell)
 If you see the directory, then you've done it successfully.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 OPTIONAL: To integrate vcpkg with VS Code, after setting the environment variables and reopening a terminal, run the command:
 
  > vcpkg integrate install
 
 This will integrate vcpkg with MSBuild environment (on Windows) and VS Code (on MacOS), allowing it to link to installed libraries and use intellisense
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Next, install the following VS Code Extensions:
 
@@ -90,6 +96,8 @@ This should be all the required/very useful extensions necessary for the project
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 Configuring and Building the executable
 
@@ -100,6 +108,7 @@ Make sure the preset under "Build" in the sidebar is set to the same as Configur
 Once the output states "Build completed" and "Build finished with exit code 0," the executable will be found in ./build/msvc/ as "FileDropOCRTest.exe"
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Possible Issues:
 
@@ -108,3 +117,4 @@ If Configure fails due to pip error and you get a warning that longPathAware mig
  > New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
 
  
+
