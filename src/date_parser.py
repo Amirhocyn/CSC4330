@@ -49,7 +49,7 @@ def extract_schedule_events(text: str) -> List[Dict[str, Any]]:
 
             if start_date:
                 # Event title = sentence with dates removed
-                cleaned = sent.replace(range_match.group(0), "").strip(" -–—,;:.")
+                cleaned = sent.replace(range_match.group(0), "").strip(" ---,;:.")
                 time_match = re.search(TIME_PATTERN, sent)
                 time_str = time_match.group(1) if time_match else None
 
