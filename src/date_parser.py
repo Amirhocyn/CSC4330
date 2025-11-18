@@ -75,7 +75,7 @@ def extract_schedule_events(text: str) -> List[Dict[str, Any]]:
         time_match = re.search(TIME_PATTERN, sent)
         time_str = time_match.group(1) if time_match else None
 
-        cleaned = sent.replace(raw_date, "").replace(time_str if time_str else "", "").strip(" -–—,;:.")
+        cleaned = sent.replace(raw_date, "").replace(time_str if time_str else "", "").strip(" -–-,;:.")
 
         events.append({
             "title": cleaned if cleaned else "Event",
