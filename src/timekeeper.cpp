@@ -77,7 +77,7 @@ void TimeKeeper::ShowFileTexts(bool* p_open)
         // Right
         {
             ImGui::BeginGroup();
-            ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
+            ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); 
             ImGui::Text("File: %s", df->getFileName(selected).c_str());
             ImGui::Separator();
             if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
@@ -153,7 +153,6 @@ bool TimeKeeper::ExtractTxt(fs::path fp)
 
 bool TimeKeeper::ExtractDoc(fs::path fp)
 {
-    // Changing library so old function removed
     return false;
 }
 
@@ -267,7 +266,7 @@ void TimeKeeper::generateICS(std::string filename, std::string title, std::strin
         // STRICT \r\n LINE ENDINGS FOR IPHONE COMPATIBILITY
         icsFile << "BEGIN:VCALENDAR\r\n";
         icsFile << "VERSION:2.0\r\n";
-        icsFile << "PRODID:-//LSU//TimeKeeper Prototype//EN\r\n";
+        icsFile << "PRODID:-//LSU//TimeKeeper v1.0//EN\r\n";
         icsFile << "CALSCALE:GREGORIAN\r\n";
         icsFile << "METHOD:PUBLISH\r\n";
         
