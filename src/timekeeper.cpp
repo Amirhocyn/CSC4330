@@ -122,9 +122,10 @@ bool TimeKeeper::Extract(fs::path fp)
     {
         return this->ExtractPdf(fp);
     }
-    else if (fext == validExt[4] || fext == validExt[5] || fext == validExt[6]) // Valid Tesseract Img File
+   else if (fext == validExt[4] || fext == validExt[5] || fext == validExt[6]) // Valid Tesseract Img File
     {
-        return this->ExtractImg(fp);
+        extractedText.push_back(fp.string()); // Store the path itself
+        return true; 
     }
     else
     {

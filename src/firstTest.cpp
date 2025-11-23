@@ -134,25 +134,28 @@ int main(int argc, char** argv) {
             tk = new TimeKeeper(df); 
             
             if (selectedFileIndex >= 0 && selectedFileIndex < tk->extractedText.size()) {
-                 currentRawText = tk->extractedText.at(selectedFileIndex);
-                 
-                 // ---------------------------------------------------------
-                 // FIXED: Python Execution Was Missing Here
-                 // ---------------------------------------------------------
-                 // 1. Write temp file
+                 // 1. Get Image Path
                  std::string originalFilePath = df.getPath(selectedFileIndex).string();
-                 std::string cmd = "python date_parser.py \"" + originalFilePath + "\""; 
 
                  // 2. Run Python
-                 // Use a full path if necessary, otherwise assumes date_parser.py is in the same folder
+                 std::string cmd = "python date_parser.py \"" + originalFilePath + "\"";
                  currentParsedResult = tk->execPython(cmd.c_str());
-                 // ---------------------------------------------------------
 
-                 // 3. Reset buffers
+                 // --- 3. NEW: READ THE RAW TEXT FROM PYTHON ---
+                 std::ifstream rawFile("last_scan_raw.txt");
+                 if (rawFile.is_open()) {
+                     std::stringstream buffer;
+                     buffer << rawFile.rdbuf();
+                     currentRawText = buffer.str(); 
+                     rawFile.close();
+                 }
+                 // ----------------------------------------------
+
+                 // 4. Reset buffers
                  strncpy(editTitle, "Scanned Event", sizeof(editTitle));
                  
-                // 4. Parse Start Date (PRETTY)
-                 std::string dateKey = "\"start_date_pretty\": \""; // CHANGED
+                 // 5. Parse Start Date
+                 std::string dateKey = "\"start_date_pretty\": \"";
                  size_t startPos = currentParsedResult.find(dateKey);
                  if (startPos != std::string::npos) {
                      startPos += dateKey.length();
@@ -163,8 +166,8 @@ int main(int argc, char** argv) {
                      strncpy(editDate, "", sizeof(editDate));
                  }
 
-                 // 5. Parse End Date (PRETTY)
-                 std::string endKey = "\"end_date_pretty\": \""; // CHANGED
+                 // 6. Parse End Date
+                 std::string endKey = "\"end_date_pretty\": \"";
                  size_t sPos2 = currentParsedResult.find(endKey);
                  if (sPos2 != std::string::npos) {
                      sPos2 += endKey.length();
@@ -175,7 +178,7 @@ int main(int argc, char** argv) {
                      strncpy(editEndDate, "", sizeof(editEndDate));
                  }
 
-                 // 6. Fill Description
+                 // 7. Fill Description
                  strncpy(editDesc, currentRawText.substr(0, 1023).c_str(), sizeof(editDesc));
                  
                  statusMessage = "Done. You can now edit the details.";
