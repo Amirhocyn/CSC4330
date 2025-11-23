@@ -1,5 +1,3 @@
-// Testing Base, just want to get file input
-
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
@@ -21,294 +19,275 @@ using std::cout;
 using std::endl;
 using std::string;
 
-/*
-class DropFolder {
-    
-    public:
-    vector<fs::path> filePaths;
-    int numFiles=0;
 
-    
-
-    
-    void handle_dropped_file(const char*);
-    int getNumFiles() {return numFiles;}
-    int getSize() {return filePaths.size();}
-    string getPath(int i) {return filePaths.at(i).string(); }
-    string getFileName(int i) {return filePaths.at(i).filename().string(); }
-    string getExtension(int i) {return filePaths.at(i).extension().string(); }
-};
-*/
-
-
-// err callback
-static void glfw_error_callback(int error, const char* description)
-{
+static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-// handle dropped files, add to parameter vector if not already included
-void DropFolder::handle_dropped_file(const char* name) {
-    fs::path path(name);
-    // fs::u8string()
-    
-    // Check that dropped folder is accepted filetype, if not, exit without including
-    string fpext = path.extension().string();
-    if (!(fpext==".txt" || fpext==".doc" || fpext==".docx" || fpext==".pdf" || fpext==".jpg" || fpext==".png" || fpext==".tiff"))
-    {
-        cout << "Invlaid file type: " << fpext;
-        return;
-    } 
-
-    // search passed vector for passed path, if not present, push_back
-    for (int i=0; i<filePaths.size(); i++)
-    {
-        if (filePaths.at(i)==path)
-            return;
-    } 
-    cout << "Read " << name << " Made " << path.string() << endl;
-    cout << "Parts: " << path.filename() << "  ext  " << path.extension() << endl;
-    filePaths.push_back(path);
-    numFiles += 1;
-}
-// file drop callback
-static void drop_files(GLFWwindow* window, int count, const char** paths)
-{
-    DropFolder *dfp = static_cast<DropFolder*>(glfwGetWindowUserPointer(window));
-    int i;
-    for (i = 0;  i < count;  i++)
-    {
-        cout << "Before:" << endl;
-        cout << (paths[i]) << endl;
-        dfp->handle_dropped_file((paths[i]));
-        cout << "After:" << endl;
+static void drop_files(GLFWwindow* window, int count, const char** paths) {
+    DropFolder* df = static_cast<DropFolder*>(glfwGetWindowUserPointer(window));
+    for (int i = 0; i < count; i++) {
+        df->handle_dropped_file(paths[i]);
     }
 }
 
-// clear color vec
-ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-// Begin main code loop
-// Only one global atm, others are for func handles
 int main(int argc, char** argv) {
-
-    // for text to file IO, set locale and save name
-    string default_loc = setlocale(LC_ALL, nullptr);
-
-    // Vector of char arrays of filepaths, will be set to window user pointer
-    DropFolder df;
-    DropFolder *dfp = &df;
-    // TimeKeeper object
-    TimeKeeper *tk = NULL;
-    // Direction drop fun handle;
-    //GLFWdropfun fdrop = drop_files;
-    
-    // bools for use
-    static bool show_demo_window = true;     // for reference and debug
-    static bool fileDropOn = false;           // if in file drop state
-    static bool haveFiles = false;          // turned on at first pushback of a file
-    static bool displayFiles = false;       // option to display files, only if haveFiles is true
-    static bool displayFileOpenTest = false; // open file testing window, only if haveFiles is true 
-    static bool displayExtracted = false;   // open extracted file window, only if haveFiles is true
-
     glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return 1;
-    
+    if (!glfwInit()) return 1;
+
     const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    // Create window with graphics context
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "TimeKeeper", nullptr, nullptr);
-    if (window == nullptr)
-        return 1;
+    GLFWwindow* window = glfwCreateWindow(1280, 800, "TimeKeeper", nullptr, nullptr);
+    if (window == nullptr) return 1;
+    
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(1);
 
+    // Data Containers
+    DropFolder df;
+    TimeKeeper* tk = new TimeKeeper(df);
+    glfwSetWindowUserPointer(window, &df);
+    
+    // ALWAYS listen for drops
+    glfwSetDropCallback(window, drop_files); 
 
-    // Setup Dear ImGui context
+    // ImGui Setup
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->AddFontDefault();
-    
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    // Setup Style
+    // Modern Dark Style
     ImGui::StyleColorsDark();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 5.0f;
+    style.FrameRounding = 5.0f;
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
- 
-    glfwSetWindowUserPointer(window, dfp);
 
-    // Main loop begins
+    // App State
+    int selectedFileIndex = -1;
+    std::string currentRawText = "";
+    std::string currentParsedResult = "No file processed yet.";
+    std::string statusMessage = "Ready for files.";
+
+    // --- EDITABLE BUFFERS ---
+    static char editTitle[128] = "New Event";
+    static char editDate[128] = "";
+    static char editEndDate[128] = "";
+    static char editDesc[1024] = "";
+
+    // Main Loop
     while (!glfwWindowShouldClose(window)) {
-
         glfwPollEvents();
 
-        // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        // UI LAYOUT
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGui::Begin("MainDashboard", nullptr, 
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
-        if (show_demo_window)
-        {
-            ImGui::ShowDemoWindow(&show_demo_window);
-        }
+        // Header
+        ImGui::Text("TimeKeeper v1.0 - Extract Dates from Documents");
+        ImGui::Separator();
 
-        if (fileDropOn)
-        {
-            glfwSetDropCallback(window, drop_files);
-        }
-        else
-        {
-            glfwSetDropCallback(window, NULL);
-        }
-
-        {
-            // Create the base window
-            ImGui::Begin("TimeKeeper");
-
-            ImGui::Text("Main page, please select how to upload.");
-            ImGui::Text("haveFiles is currently set to %s.", haveFiles ? "true" : "false");
-            ImGui::Text("fileDropOn is currently set to %s.", fileDropOn ? "true" : "false");
-            ImGui::Text("displayFiles is currently set to %s.", displayFiles ? "true" : "false");
-            if (ImGui::Button("Turn on file drop")) 
-            {
-                fileDropOn = true;
-            }
-            if (df.hasFiles())
-            {
-                ImGui::Checkbox("Allow file display", &displayFiles);
-                if (ImGui::Button("Extract from current files"))
-                {
-                    fileDropOn = false;
-                    glfwSetDropCallback(window, NULL);
-                    if (tk==NULL){
-                        tk = new TimeKeeper(df);
-                    }
-                    displayExtracted = true;
+        ImGui::Columns(2, "MainCols", true); 
+        
+        // --------------------------
+        // LEFT COLUMN: File Queue
+        // --------------------------
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "1. DRAG FILES HERE");
+        
+        ImGui::BeginChild("FileQueue", ImVec2(0, 300), true);
+        if (df.getSize() == 0) {
+            ImGui::TextDisabled("Drag and drop PDFs/Images here...");
+        } else {
+            for (int i = 0; i < df.getSize(); i++) {
+                bool isSelected = (selectedFileIndex == i);
+                if (ImGui::Selectable(df.getFileName(i).c_str(), isSelected)) {
+                    selectedFileIndex = i;
                 }
             }
-            ImGui::End();
         }
+        ImGui::EndChild();
 
-        if (fileDropOn)
-        {
-            if (ImGui::Begin("File_Drop", &fileDropOn)) 
-            {
-                ImGui::Text("Time to drag in some files!\nOh yeah!");
-                if (df.hasFiles() && ImGui::TreeNode("Attached Files"))
-                {
-                    if (ImGui::BeginListBox("Files"))
-                    {
-                        for (int i=0; i<df.getSize(); i++)
-                        {
-                            ImGui::Text("File %d: %s", i+1, df.getFileName(i).c_str());
-                        }
-                        ImGui::EndListBox();
-                    }
-                    ImGui::TreePop();
-                }
-                if (ImGui::Button("Stop Dropping"))
-                {
-                    fileDropOn = false;
-                }
-                ImGui::End();
-            }
-            else
-            {
-                ImGui::End();
-            }
-        }
-
-        if (df.hasFiles() && displayFiles)
-        {
-            ImGui::Begin("File_Open_Test", &displayFiles);
-            ImGui::Text("Test whether open file works");
-
-            static int fileSelected = 0;
-            if (ImGui::BeginCombo("Open test", df.getFileName(fileSelected).c_str()))
-            {
-                for (int i=0; i<df.getSize(); i++)
-                {
-                    const bool is_selected = (fileSelected == i);
-                    if (ImGui::Selectable(df.getFileName(i).c_str(), is_selected))
-                    {
-                        fileSelected = i;
-                        displayFileOpenTest = false;
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            if (ImGui::Button("Test Opening Current File"))
-            {
-                std::fstream fop;
-                fop.open(df.getPathName(fileSelected));
-                if (fop.is_open())
-                {
-                    displayFileOpenTest = true;
-                }
-                else
-                {
-                    displayFileOpenTest = false;
-                }
-                fop.close();
-            }
-            ImGui::SameLine(); if (displayFileOpenTest) ImGui::Text("File successfully opened!");
-            ImGui::End();
-        }
-
-        if (df.hasFiles() && displayExtracted)
-        {
-            
-            {
-                tk->ShowFileTexts(&displayExtracted);
-            }
+        if (ImGui::Button("Clear List")) {
+            df = DropFolder();
+            selectedFileIndex = -1;
+            statusMessage = "List cleared.";
         }
         
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(df.getSize() == 0);
+        if (ImGui::Button("PROCESS FILES", ImVec2(150, 0))) {
+            statusMessage = "Processing...";
+            
+            if (tk != nullptr) delete tk;
+            tk = new TimeKeeper(df); 
+            
+            if (selectedFileIndex >= 0 && selectedFileIndex < tk->extractedText.size()) {
+                 currentRawText = tk->extractedText.at(selectedFileIndex);
+                 
+                 // ---------------------------------------------------------
+                 // FIXED: Python Execution Was Missing Here
+                 // ---------------------------------------------------------
+                 // 1. Write temp file
+                 std::ofstream out("temp_input.txt");
+                 out << currentRawText;
+                 out.close();
+
+                 // 2. Run Python
+                 // Use a full path if necessary, otherwise assumes date_parser.py is in the same folder
+                 std::string cmd = "python date_parser.py \"temp_input.txt\""; 
+                 currentParsedResult = tk->execPython(cmd.c_str()); 
+                 // ---------------------------------------------------------
+
+                 // 3. Reset buffers
+                 strncpy(editTitle, "Scanned Event", sizeof(editTitle));
+                 
+                // 4. Parse Start Date (PRETTY)
+                 std::string dateKey = "\"start_date_pretty\": \""; // CHANGED
+                 size_t startPos = currentParsedResult.find(dateKey);
+                 if (startPos != std::string::npos) {
+                     startPos += dateKey.length();
+                     size_t endPos = currentParsedResult.find("\"", startPos);
+                     std::string foundDate = currentParsedResult.substr(startPos, endPos - startPos);
+                     strncpy(editDate, foundDate.c_str(), sizeof(editDate));
+                 } else {
+                     strncpy(editDate, "", sizeof(editDate));
+                 }
+
+                 // 5. Parse End Date (PRETTY)
+                 std::string endKey = "\"end_date_pretty\": \""; // CHANGED
+                 size_t sPos2 = currentParsedResult.find(endKey);
+                 if (sPos2 != std::string::npos) {
+                     sPos2 += endKey.length();
+                     size_t ePos2 = currentParsedResult.find("\"", sPos2);
+                     std::string foundEnd = currentParsedResult.substr(sPos2, ePos2 - sPos2);
+                     strncpy(editEndDate, foundEnd.c_str(), sizeof(editEndDate));
+                 } else {
+                     strncpy(editEndDate, "", sizeof(editEndDate));
+                 }
+
+                 // 6. Fill Description
+                 strncpy(editDesc, currentRawText.substr(0, 1023).c_str(), sizeof(editDesc));
+                 
+                 statusMessage = "Done. You can now edit the details.";
+            } else {
+                statusMessage = "Error: Selected file not found.";
+            }
+        }
+        ImGui::EndDisabled();
+
+        ImGui::Spacing();
+        ImGui::TextWrapped("Status: %s", statusMessage.c_str());
+
+        ImGui::NextColumn(); 
+
+        // --------------------------
+        // RIGHT COLUMN: Results
+        // --------------------------
+        ImGui::TextColored(ImVec4(1, 1, 0, 1), "2. RESULTS");
+        
+        if (ImGui::BeginTabBar("ResultTabs")) {
+            
+            // Tab 1: Raw Text
+            if (ImGui::BeginTabItem("Extracted Text")) {
+                ImGui::BeginChild("RawView", ImVec2(0, 0), true); 
+                ImGui::TextWrapped("%s", currentRawText.empty() ? "No text extracted yet." : currentRawText.c_str());
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+
+            // Tab 2: Smart Data (The Edit Form)
+            if (ImGui::BeginTabItem("Smart Data (Edit Event)")) {
+                ImGui::BeginChild("ParseView", ImVec2(0, -40), true); 
+                
+                ImGui::TextColored(ImVec4(1,1,0,1), "Event Details");
+                ImGui::Text("Review and edit the information below before saving.");
+                ImGui::Separator();
+                ImGui::Spacing();
+
+
+                ImGui::InputText("Event Title", editTitle, IM_ARRAYSIZE(editTitle));
+                ImGui::InputText("Start (YYYYMMDDTHHMMSS)", editDate, IM_ARRAYSIZE(editDate));
+                ImGui::InputText("End   (YYYYMMDDTHHMMSS)", editEndDate, IM_ARRAYSIZE(editEndDate));
+                
+                ImGui::Spacing();
+                ImGui::Text("Description:");
+                ImGui::InputTextMultiline("##desc", editDesc, IM_ARRAYSIZE(editDesc), ImVec2(-FLT_MIN, 150));
+
+                ImGui::EndChild();
+
+                // ACTION BUTTON
+                if (ImGui::Button("CREATE RSVP (.ics)", ImVec2(200, 30))) {
+                    
+                    // Helper Lambda to convert "2025-10-28 17:00:00" -> "20251028T170000"
+                    auto toICS = [](std::string input) -> std::string {
+                        std::string digits = "";
+                        for (char c : input) {
+                            if (isdigit(c)) digits += c;
+                        }
+                        // If we have enough digits (YYYYMMDDHHMMSS), insert the T
+                        if (digits.size() >= 14) {
+                            return digits.substr(0, 8) + "T" + digits.substr(8, 6);
+                        }
+                        return digits; // Fallback or empty
+                    };
+
+                    // Find Desktop Path
+                    std::string desktopPath;
+                    const char* userProfile = std::getenv("USERPROFILE");
+                    if (userProfile) desktopPath = std::string(userProfile) + "\\Desktop\\invite.ics";
+                    else desktopPath = "invite.ics";
+
+                    // CONVERT PRETTY UI STRINGS BACK TO ICS FORMAT
+                    std::string sDate = toICS(std::string(editDate));
+                    std::string eDate = toICS(std::string(editEndDate));
+                    
+                    tk->generateICS(desktopPath, editTitle, sDate, eDate, editDesc);
+                    
+                    statusMessage = "Saved to Desktop: " + desktopPath;
+                    
+                    #ifdef _WIN32
+                    std::string openCmd = "start \"\" \"" + desktopPath + "\"";
+                    system(openCmd.c_str());
+                    #endif
+                }
+                ImGui::EndTabItem();
+            }
+            
+            ImGui::EndTabBar();
+        }
+
+        ImGui::End(); 
 
         // Rendering
-        // (Your code clears your framebuffer, renders your other stuff etc.)
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        ImVec4 clear_color = ImVec4(0.15f, 0.16f, 0.21f, 1.00f); 
+        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        
-        
         glfwSwapBuffers(window);
     }
 
+    // Cleanup
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
     glfwDestroyWindow(window);
     glfwTerminate();
 
-
-    // Test portion to write drag and drop payloads gained to file to check if it worked
-    std::ofstream fout;
-    fout.open("ReadPayloads.txt");
-    if (fout.is_open())
-    {
-        fout << "Successfully got here" << endl;
-        fout << "Number of filepaths: " << std::to_string(df.getNumFiles()) << endl;
-        fout << "All values:" << endl;
-        for (int i=0; i<df.getSize(); i++) 
-        {
-            fout << df.getPathName(i) << endl;
-        }
-        fout << endl << "That's all, folks!";
-    }
-    fout.close();
-
     return 0;
-
 }

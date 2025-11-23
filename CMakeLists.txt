@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 4.0)
-project(FileDropOCRTest VERSION 0.1.0 LANGUAGES C CXX)
+
+# CHANGED: Name to TimeKeeper, Version to 1.0
+project(TimeKeeper VERSION 1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20 )
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,12 +29,12 @@ if (NOT VENV_CREATE_RESULT EQUAL 0)
 endif()
 
 # Define paths to the virtual environment's python and pip
-if(CMAKE_HOST_WIN32)  # Windows uses different location
+if(CMAKE_HOST_WIN32) 
    set(VENV_PYTHON "${CMAKE_CURRENT_BINARY_DIR}/venv/Scripts/python.exe")
    set(VENV_PIP "${CMAKE_CURRENT_BINARY_DIR}/venv/Scripts/pip.exe")
-else()  # Linux/macOS
+else() 
    set(VENV_PYTHON "${CMAKE_CURRENT_BINARY_DIR}/venv/bin/python") 
-   set(VENV_PIP "${CMAKE_CURRENT_BINARY_DIR}/venv/bin/pip") # Linux/macOS
+   set(VENV_PIP "${CMAKE_CURRENT_BINARY_DIR}/venv/bin/pip") 
 endif()
 
 # Install packages using pip within the virtual environment
@@ -51,31 +53,33 @@ endif()
 include(CTest)
 enable_testing()
 
-
 file(DOWNLOAD "https://github.com/tesseract-ocr/tessdata_best/raw/refs/heads/main/eng.traineddata" "${CMAKE_BINARY_DIR}/tessdata/eng.traineddata")
 
-add_executable( FileDropOCRTest )
+# CHANGED: Executable name
+add_executable( TimeKeeper )
 
-set_target_properties(FileDropOCRTest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+# CHANGED: Target properties
+set_target_properties(TimeKeeper PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-target_include_directories( FileDropOCRTest PRIVATE ${PROJECT_SOURCE_DIR}/include )
+# CHANGED: Include directories
+target_include_directories( TimeKeeper PRIVATE ${PROJECT_SOURCE_DIR}/include )
 
-target_link_libraries(FileDropOCRTest PRIVATE glfw Tesseract::libtesseract leptonica imgui::imgui duckx::duckx PkgConfig::POPPLER_CPP)
+# CHANGED: Link libraries
+target_link_libraries(TimeKeeper PRIVATE glfw Tesseract::libtesseract leptonica imgui::imgui duckx::duckx PkgConfig::POPPLER_CPP)
 
 if(CMAKE_HOST_WIN32)
-   target_link_libraries(FileDropOCRTest PRIVATE opengl32 )
+   target_link_libraries(TimeKeeper PRIVATE opengl32 )
 else()
-  target_link_libraries(FileDropOCRTest PRIVATE OpenGL::GL )
+  target_link_libraries(TimeKeeper PRIVATE OpenGL::GL )
 endif()
 
 
-target_sources( FileDropOCRTest
+target_sources( TimeKeeper
   PRIVATE
     src/firstTest.cpp
     src/timekeeper.cpp
     src/ExtractPDFText.cpp 
 )
-
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

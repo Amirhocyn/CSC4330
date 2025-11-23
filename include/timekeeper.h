@@ -44,7 +44,7 @@ class TimeKeeper {
     int filesRead = 0;
     bool goodReads = false;
     DropFolder *df;
-    std::vector<std::string> extractedText;
+
     
     bool ExtractTxt(fs::path fp);
     bool ExtractDoc(fs::path fp);
@@ -58,6 +58,10 @@ class TimeKeeper {
     bool Extract(fs::path fp);
     void ShowFileTexts(bool* p_open);
     int getSize() {return extractedText.size();}
+    std::string execPython(const char* cmd);
+    std::vector<std::string> extractedText;
+
+    void generateICS(std::string filename, std::string title, std::string startDateTime, std::string endDateTime, std::string description);
 };
 
 
