@@ -11,11 +11,6 @@
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 
-#include <cstdio>
-#include <memory>
-#include <stdexcept>
-#include <array>
-
 
 TimeKeeper::TimeKeeper(DropFolder &dfp)
 {
@@ -31,16 +26,6 @@ TimeKeeper::TimeKeeper(DropFolder &dfp)
     if (extractedText.size()==filesRead)
     {
         goodReads = true;
-    }
-}
-
-void DropFolder::handle_dropped_file(const char* path) {
-    fs::path p(path);
-    // Simple filter to prevent random files
-    std::string ext = p.extension().string();
-    if (ext == ".txt" || ext == ".pdf" || ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
-        filePaths.push_back(p);
-        numFiles++;
     }
 }
 
@@ -77,7 +62,7 @@ void TimeKeeper::ShowFileTexts(bool* p_open)
         // Right
         {
             ImGui::BeginGroup();
-            ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); 
+            ImGui::BeginChild("item view", ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
             ImGui::Text("File: %s", df->getFileName(selected).c_str());
             ImGui::Separator();
             if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None))
@@ -153,6 +138,7 @@ bool TimeKeeper::ExtractTxt(fs::path fp)
 
 bool TimeKeeper::ExtractDoc(fs::path fp)
 {
+    // Changing library so old function removed
     return false;
 }
 
@@ -204,7 +190,7 @@ bool TimeKeeper::ExtractImg(fs::path fp)
     // Destroy used object and release memory
     api->End();
     delete api;
-    delete[] readText;
+    delete readText;
     pixDestroy(&image);
 
     return true;
@@ -235,70 +221,4 @@ bool TimeKeeper::ExtractImg(PIX *image)
     pixDestroy(&image);
 
     return true;
-}
-
-std::string TimeKeeper::execPython(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    
-    // Use _popen on Windows, popen on Mac/Linux
-    #ifdef _WIN32
-        std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(cmd, "r"), _pclose);
-    #else
-        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    #endif
-
-    if (!pipe) {
-        return "Error: popen() failed!";
-    }
-    
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
-
-void TimeKeeper::generateICS(std::string filename, std::string title, std::string startDateTime, std::string endDateTime, std::string description) {
-    // Open in binary mode to prevent Windows from messing with our explicit line endings
-    std::ofstream icsFile(filename, std::ios::binary); 
-    
-    if (icsFile.is_open()) {
-        // STRICT \r\n LINE ENDINGS FOR IPHONE COMPATIBILITY
-        icsFile << "BEGIN:VCALENDAR\r\n";
-        icsFile << "VERSION:2.0\r\n";
-        icsFile << "PRODID:-//LSU//TimeKeeper v1.0//EN\r\n";
-        icsFile << "CALSCALE:GREGORIAN\r\n";
-        icsFile << "METHOD:PUBLISH\r\n";
-        
-        icsFile << "BEGIN:VEVENT\r\n";
-        
-        // Metadata
-        icsFile << "UID:" << startDateTime << "-" << title.substr(0, 3) << "@timekeeper.app\r\n";
-        icsFile << "DTSTAMP:" << startDateTime << "\r\n";
-        
-        // Start Time
-        icsFile << "DTSTART:" << startDateTime << "\r\n";
-        
-        // End Time (Logic: If empty, use 1 hour duration)
-        if (!endDateTime.empty()) {
-             icsFile << "DTEND:" << endDateTime << "\r\n";
-        } else {
-             icsFile << "DURATION:PT1H\r\n"; 
-        }
-        
-        icsFile << "STATUS:CONFIRMED\r\n";
-        icsFile << "SEQUENCE:0\r\n";
-        icsFile << "SUMMARY:" << title << "\r\n";
-        
-        // Description (Escape newlines to prevent breaking the file)
-        // Simple replacement of \n with space for safety in prototype
-        std::string cleanDesc = description;
-        for (auto & c: cleanDesc) if (c == '\n') c = ' ';
-        icsFile << "DESCRIPTION:" << cleanDesc << "\r\n";
-        
-        icsFile << "END:VEVENT\r\n";
-        icsFile << "END:VCALENDAR\r\n";
-        
-        icsFile.close();
-    }
 }
