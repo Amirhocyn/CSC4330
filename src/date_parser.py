@@ -87,27 +87,49 @@ def extract_schedule_events(filepath):
         found_time = False
         
         if range_match:
-            found_time = True
-            t_start = range_match.group(1)
-            t_end = range_match.group(2)
-            meridiem = range_match.group(3) if range_match.group(3) else ""
-            is_pm = meridiem.lower() == 'pm'
-            end_dt = merge_date_and_time(base_date, f"{t_end}{meridiem}")
-            start_dt = merge_date_and_time(base_date, t_start, is_pm_context=is_pm)
-        else:
-            time_match = re.search(SINGLE_TIME_PATTERN, sent, flags=re.IGNORECASE)
-            if time_match:
-                found_time = True
-                t_raw = time_match.group(1) + (time_match.group(2) if time_match.group(2) else "")
-                start_dt = merge_date_and_time(base_date, t_raw)
-        
-        if found_time or (date_match and not found_time):
-             events.append({
-                "title": "Scanned Event",
-                "start_date_pretty": start_dt.strftime("%Y-%m-%d %H:%M:%S"),
-                "end_date_pretty": end_dt.strftime("%Y-%m-%d %H:%M:%S") if end_dt else "",
-                "raw": sent.strip()
-            })
+            start_raw = range_match.group("start")
+            end_raw = range_match.group("end")
+
+            start_date = parse_date(start_raw)
+            end_date = parse_date(end_raw)
+
+            if start_date:
+                # Event title = sentence with dates removed
+                cleaned = sent.replace(range_match.group(0), "").strip(" ---,;:.")
+                time_match = re.search(TIME_PATTERN, sent)
+                time_str = time_match.group(1) if time_match else None
+
+                events.append({
+                    "title": cleaned if cleaned else "Event",
+                    "start_date": start_date.date().isoformat(),
+                    "end_date": end_date.date().isoformat() if end_date else start_date.date().isoformat(),
+                    "time": time_str,
+                    "raw": sent.strip()
+                })
+            continue
+
+        # 2) Single date case
+        date_match = re.search(SINGLE_DATE_PATTERN, sent, flags=re.IGNORECASE | re.VERBOSE)
+        if not date_match:
+            continue
+
+        raw_date = date_match.group(1)
+        parsed_date = parse_date(raw_date)
+        if not parsed_date:
+            continue
+
+        time_match = re.search(TIME_PATTERN, sent)
+        time_str = time_match.group(1) if time_match else None
+
+        cleaned = sent.replace(raw_date, "").replace(time_str if time_str else "", "").strip(" -–-,;:.")
+
+        events.append({
+            "title": cleaned if cleaned else "Event",
+            "start_date": parsed_date.date().isoformat(),
+            "end_date": parsed_date.date().isoformat(),  # single day event
+            "time": time_str,
+            "raw": sent.strip()
+        })
 
     return events
 
