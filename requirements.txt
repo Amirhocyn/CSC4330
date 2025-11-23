@@ -1,3 +1,4 @@
 regex
 nltk
 dateparser
+google-cloud-vision

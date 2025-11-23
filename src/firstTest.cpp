@@ -140,14 +140,12 @@ int main(int argc, char** argv) {
                  // FIXED: Python Execution Was Missing Here
                  // ---------------------------------------------------------
                  // 1. Write temp file
-                 std::ofstream out("temp_input.txt");
-                 out << currentRawText;
-                 out.close();
+                 std::string originalFilePath = df.getPath(selectedFileIndex).string();
+                 std::string cmd = "python date_parser.py \"" + originalFilePath + "\""; 
 
                  // 2. Run Python
                  // Use a full path if necessary, otherwise assumes date_parser.py is in the same folder
-                 std::string cmd = "python date_parser.py \"temp_input.txt\""; 
-                 currentParsedResult = tk->execPython(cmd.c_str()); 
+                 currentParsedResult = tk->execPython(cmd.c_str());
                  // ---------------------------------------------------------
 
                  // 3. Reset buffers
