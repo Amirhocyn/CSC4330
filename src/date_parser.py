@@ -7,11 +7,11 @@ from dateparser import parse as parse_date
 from datetime import timedelta
 
 # Regex patterns
-DATE_PATTERN = r"(\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\s+\d{1,2}(?:,\s*\d{4})?|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})"
+DATE_PATTERN = r"(\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z.]*\s+\d{1,2}(?:,\s*\d{4})?|\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})"
 # Matches time ranges like "5-7:30pm"
 TIME_RANGE_PATTERN = r"(\d{1,2}(?::\d{2})?)\s*(?:-|–|to)\s*(\d{1,2}(?::\d{2})?)\s*(am|pm|AM|PM)?"
 # Matches single times like "5pm"
-SINGLE_TIME_PATTERN = r"\b(\d{1,2}(?::\d{2})?)\s*(am|pm|AM|PM)"
+SINGLE_TIME_PATTERN = r"(?:at|@)?\s*\b(\d{1,2}(?::\d{2})?)\s*(am|pm|AM|PM)"
 
 def merge_date_and_time(base_date_obj, time_str, is_pm_context=False):
     if not base_date_obj or not time_str:
