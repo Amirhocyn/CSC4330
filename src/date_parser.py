@@ -1,6 +1,3 @@
-import sys
-import json
-import os
 import regex as re
 import nltk
 from dateparser import parse as parse_date
@@ -96,7 +93,6 @@ def extract_schedule_events(filepath):
     clean_text = text_content.replace('\r', ' ')
     sentences = nltk.sent_tokenize(clean_text)
     events = []
-    last_seen_date = None
 
     for sent in sentences:
         date_match = re.search(DATE_PATTERN, sent, flags=re.IGNORECASE)
