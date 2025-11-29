@@ -38,7 +38,7 @@ void DropFolder::handle_dropped_file(const char* path) {
     fs::path p(path);
     // Simple filter to prevent random files
     std::string ext = p.extension().string();
-    if (ext == ".txt" || ext == ".pdf" || ext == ".png" || ext == ".jpg" || ext == ".jpeg") {
+    if (ext == ".txt" || ext == ".pdf" || ext == ".png" || ext == ".jpg" || ext == ".jpeg"|| ext == ".docx") {
         filePaths.push_back(p);
         numFiles++;
     }
@@ -108,31 +108,25 @@ void TimeKeeper::ShowFileTexts(bool* p_open)
 
 bool TimeKeeper::Extract(fs::path fp)
 {
-    std::string validExt[] = {".txt", ".doc", ".docx", ".pdf", ".png", ".jpg", ".tiff"};
+    // Define supported extensions
+    std::string validExt[] = {".txt", ".doc", ".docx", ".pdf", ".png", ".jpg", ".jpeg"};
     std::string fext = fp.extension().string();
-    if (fext == validExt[0])   // Text file
-    {
-        return this->ExtractTxt(fp);
+
+    // 1. Documents (Txt, Docx, PDF) - PASS PATH TO PYTHON
+    // We treat PDF just like the others now.
+    if (fext == ".txt" || fext == ".doc" || fext == ".docx" || fext == ".pdf") {
+        extractedText.push_back(fp.string()); 
+        return true;
     }
-    else if (fext == validExt[1] || fext == validExt[2]) // Doc/Docx file
-    {
-        return this->ExtractDoc(fp);
-    }
-    else if (fext == validExt[3]) // PDF file
-    {
-        return this->ExtractPdf(fp);
-    }
-   else if (fext == validExt[4] || fext == validExt[5] || fext == validExt[6]) // Valid Tesseract Img File
-    {
-        extractedText.push_back(fp.string()); // Store the path itself
+    // 2. Images - PASS PATH TO PYTHON
+    else if (fext == ".png" || fext == ".jpg" || fext == ".jpeg") {
+        extractedText.push_back(fp.string()); 
         return true; 
     }
-    else
-    {
-        std::cout << "Unsupported Filetype";
+    else {
+        std::cout << "Unsupported Filetype: " << fext << "\n";
         return false;
     }
-   
 }
 
 bool TimeKeeper::ExtractTxt(fs::path fp)

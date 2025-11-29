@@ -2,3 +2,5 @@ regex
 nltk
 dateparser
 google-cloud-vision
+python-docx
+pypdf
